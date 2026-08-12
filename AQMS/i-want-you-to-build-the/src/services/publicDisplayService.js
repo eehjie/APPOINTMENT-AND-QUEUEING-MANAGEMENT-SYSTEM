@@ -1,0 +1,17 @@
+/**
+ * Public display mock realtime adapter.
+ * Laravel replacement: GET /public/offices/{officeId}/queue plus a WebSocket
+ * channel such as public-office.{officeId}.queue.
+ */
+const KEY='aqms-public-display-state'
+const displays={
+  registrar:{officeId:'registrar',officeName:"Registrar's Office",hours:'Monday–Friday, 8:00 AM–5:00 PM',status:'open',current:'R-023',counter:'Counter 1',service:'Certificate of Enrollment',next:['R-024','R-025','R-026'],waiting:6,counters:3,services:[['Document Requests','R-023'],['Certification','R-014'],['Student Records','B-008']]},
+  cics:{officeId:'cics',officeName:'College of Information and Computing Sciences',hours:'Monday–Friday, 8:00 AM–5:00 PM',status:'open',current:'C-018',counter:'Consultation Desk 1',service:'Faculty Consultation',next:['C-019','C-020','C-021'],waiting:4,counters:2,services:[['Faculty Consultation','C-018'],['Academic Advising','C-009'],['Program Clearance','C-004']]},
+  ubo:{officeId:'ubo',officeName:'University Business Office',hours:'Monday–Friday, 8:00 AM–5:00 PM',status:'open',current:'U-040',counter:'Counter 2',service:'Tuition Fee Assessment',next:['U-041','U-042','U-043'],waiting:8,counters:3,services:[['Tuition Assessment','U-040'],['Payment Verification','U-021'],['Refund Inquiry','U-008']]},
+  infirmary:{officeId:'infirmary',officeName:'University Infirmary',hours:'Monday–Friday, 8:00 AM–5:00 PM',status:'open',current:'I-007',counter:'Consultation Room 1',service:'Medical Consultation',next:['I-008','I-009','I-010'],waiting:3,counters:2,services:[['Medical Consultation','I-007'],['Medical Certificate','I-003'],['Health Records','I-002']]}
+}
+export const normalizeOfficeId=(officeId)=>displays[officeId]?officeId:'registrar'
+export function getPublicDisplay(officeId){const id=normalizeOfficeId(officeId);try{return {...displays[id],...(JSON.parse(localStorage.getItem(KEY)||'{}')[id]||{})}}catch{return displays[id]}}
+export function publishDisplay(officeId,patch){const id=normalizeOfficeId(officeId);let all={};try{all=JSON.parse(localStorage.getItem(KEY)||'{}')}catch{};const next={...getPublicDisplay(id),...patch,updatedAt:Date.now(),announcement:patch.announcement||null};all[id]=next;localStorage.setItem(KEY,JSON.stringify(all));window.dispatchEvent(new CustomEvent('aqms-public-display-update',{detail:{officeId:id,data:next}}));return next}
+export function subscribePublicDisplay(officeId,listener){const id=normalizeOfficeId(officeId);const receive=(event)=>{if(event.key===KEY||event.type==='aqms-public-display-update'){const changed=event.detail?.officeId;if(!changed||changed===id)listener(getPublicDisplay(id))}};window.addEventListener('storage',receive);window.addEventListener('aqms-public-display-update',receive);return()=>{window.removeEventListener('storage',receive);window.removeEventListener('aqms-public-display-update',receive)}}
+export function publishQueueAction(officeId,action,queue={}){const state=getPublicDisplay(officeId);if(action==='call'||action==='recall')return publishDisplay(officeId,{current:queue.id||queue.no||state.current,counter:queue.counter||state.counter,service:queue.service||state.service,next:(queue.next||state.next).filter(n=>n!==(queue.id||queue.no)),waiting:Math.max(0,state.waiting-1),announcement:{number:queue.id||queue.no||state.current,counter:queue.counter||state.counter,at:Date.now()}});if(action==='complete'||action==='skip')return publishDisplay(officeId,{current:null,status:action==='skip'?'attention':'open',announcement:null,updatedAt:Date.now()});return state}

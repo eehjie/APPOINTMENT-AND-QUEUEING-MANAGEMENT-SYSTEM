@@ -1,0 +1,5 @@
+import { apiRequest, delay, USE_MOCK_API } from './apiClient'; import { mockStore } from './mockStore'
+/** GET /users | params: query,role,status | response: {data:User[],meta:{pagination}} | errors: 401,403 */ export const listUsers=(params={})=>USE_MOCK_API?delay({data:mockStore.users(),meta:{}}):apiRequest('/users',{params})
+/** POST /users | body: {name,email,role,office_id?,status} | response: {data:User} | errors: 401,403,422 */ export const createUser=(body)=>USE_MOCK_API?delay({data:body}):apiRequest('/users',{method:'POST',body})
+/** PATCH /users/{id} | body: Partial<User> | response: {data:User} | errors: 401,403,404,422 */ export const updateUser=(id,body)=>USE_MOCK_API?delay({data:{id,...body}}):apiRequest(`/users/${id}`,{method:'PATCH',body})
+/** POST /users/{id}/reset-password | response: {message} | errors: 401,403,404 */ export const resetUserPassword=(id)=>USE_MOCK_API?delay({message:'Password reset requested.'}):apiRequest(`/users/${id}/reset-password`,{method:'POST'})

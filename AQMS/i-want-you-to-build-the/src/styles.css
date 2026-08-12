@@ -1,0 +1,5 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base { * { @apply border-slate-200; } body { @apply bg-slate-100 text-slate-800 antialiased; font-family: Inter, ui-sans-serif, system-ui, sans-serif; } button, input, select { font: inherit; } }
+@layer components { .card { @apply rounded-xl border bg-white shadow-sm; } .input { @apply block w-full rounded-lg border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-msu-500 focus:ring-2 focus:ring-msu-100; } .label { @apply mb-1.5 block text-sm font-medium text-slate-700; } .page-title { @apply text-xl font-bold tracking-tight text-slate-900 sm:text-2xl; } .muted { @apply text-sm text-slate-500; } }

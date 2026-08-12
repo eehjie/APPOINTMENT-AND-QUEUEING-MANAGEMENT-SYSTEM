@@ -1,0 +1,10 @@
+import { apiRequest, delay, USE_MOCK_API } from './apiClient'
+import { mockStore } from './mockStore'
+/** GET /appointments | params: status,office_id,date | response: {data:Appointment[]} | errors: 401,403 */
+export async function listAppointments(params={}){if(!USE_MOCK_API)return apiRequest('/appointments',{params});let data=mockStore.appointments();if(params.status)data=data.filter(x=>x.status===params.status);return delay({data})}
+/** POST /appointments | body: {office_id,service_id,personnel_id?,date,time,purpose} | response: {data:Appointment} | errors: 401,422 */
+export async function createAppointment(body){if(!USE_MOCK_API)return apiRequest('/appointments',{method:'POST',body});const item={id:`APT-2026-${String(mockStore.appointments().length+86).padStart(3,'0')}`,reference:`APT-2026-${String(mockStore.appointments().length+86).padStart(3,'0')}`,office:body.office,service:body.service,date:body.date,time:body.time,personnel:body.personnel||'Office service counter',purpose:body.purpose,status:'Confirmed',queue:'—'};mockStore.setAppointments([...mockStore.appointments(),item]);return delay({data:item})}
+/** PATCH /appointments/{reference} | body: {status} | response: {data:Appointment} | errors: 401,403,404,422 */
+export async function updateAppointment(reference,body){if(!USE_MOCK_API)return apiRequest(`/appointments/${reference}`,{method:'PATCH',body});let updated;mockStore.setAppointments(mockStore.appointments().map(x=>{if((x.reference||x.id)===reference){updated={...x,...body};return updated}return x}));return delay({data:updated})}
+/** POST /appointments/{reference}/check-in | response: {data:{appointment,queue}} | errors: 401,404,409 */
+export async function checkInAppointment(reference){if(!USE_MOCK_API)return apiRequest(`/appointments/${reference}/check-in`,{method:'POST'});const q={no:'R-024',number:'R-024',status:'Waiting',office:'Registrar',service:'Certificate of Enrollment',checkInStatus:'Checked in'};await updateAppointment(reference,{status:'Checked in',queue:q.no});return delay({data:{appointment:mockStore.appointments().find(x=>(x.reference||x.id)===reference),queue:q}})}
